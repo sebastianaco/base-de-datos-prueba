@@ -2,6 +2,12 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from datetime import datetime
 
+# --- Variables Globales para Conexión Persistente ---
+client_global = None
+collection_global = None
+
+
+
 # --- Configuración de Conexión a MongoDB ---
 # IMPORTANTE: Reemplaza esta URI con la de tu cluster de MongoDB Atlas si lo usas.
 # Si es local, probablemente sea 'mongodb://localhost:27017/'
@@ -11,16 +17,20 @@ COLLECTION_NAME = "alimentos" # Nombre de la colección que creaste/usarás
 
 # --- Funciones de Utilidad ---
 def get_collection():
-    """Establece la conexión a MongoDB y devuelve la colección."""
+    """Devuelve la colección de MongoDB, reutilizando la conexión existente."""
+    global client_global, collection_global
+    if collection_global is not None:
+        return collection_global
     try:
-        client = MongoClient(MONGO_URI)
-        db = client[DB_NAME]
-        collection = db[COLLECTION_NAME]
+        client_global = MongoClient(MONGO_URI)
+        db = client_global[DB_NAME]
+        collection_global = db[COLLECTION_NAME]
         print(f"Conexión exitosa a la colección '{COLLECTION_NAME}' en la base de datos '{DB_NAME}'.")
-        return collection
+        return collection_global
     except Exception as e:
         print(f"Error al conectar a MongoDB: {e}")
         return None
+
 
 # --- Operaciones CRUD ---
 
@@ -533,3 +543,7 @@ if __name__ == "__main__":
         menu_interactivo_crud() # Esta línea llama a la función del menú interactivo
     else:
         print("Opción no válida. Por favor, ejecuta el script de nuevo y elige 1 o 2.")
+
+if client_global:
+    client_global.close()
+    print("Conexión a MongoDB cerrada.")
